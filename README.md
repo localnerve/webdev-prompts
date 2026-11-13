@@ -1,11 +1,59 @@
-# Tool Routing Directives — Quick Reference
+# webdev-prompts
+
+Reusable instructions for AI coding assistants, organized by **what kind of customization
+they are** rather than by which harness they were written for. See
+[docs/customization-types.md](docs/customization-types.md) for the four kinds (rules,
+prompts, skills, agents), what each harness calls them, and what changes when porting.
+
+## Catalog
+
+| Kind | File | What it does | Written for |
+|---|---|---|---|
+| Rule | [rules/tool-routing-reminder.md](rules/tool-routing-reminder.md) | Always-on 3-line tripwire: use a tool for live state/docs/spec checks; points to `/route-to-tools`. | Any (see table below) |
+| Prompt | [prompts/route-to-tools.prompt.md](prompts/route-to-tools.prompt.md) | Full tool-routing decision tree for web dev tasks (Playwright, GitHub read-only, Brave, Context7, specification.website). | Any (see table below) |
+| Agent | [agents/local-maintenance.agent.md](agents/local-maintenance.agent.md) | Solo agent for routine repo work on a small local model: one module per session, keeps a session-resume packet, never delegates, writes social posts when done. | GitHub Copilot |
+| Agent | [agents/local-protocol-dev.agent.md](agents/local-protocol-dev.agent.md) | Coordinator for modeling multi-agent designs locally: max 2 subagents (`worker-a`, `worker-b`), no nesting. | GitHub Copilot |
+| Skill | [skills/](skills/) | None yet. One folder per skill, each with a `SKILL.md`. | - |
+
+### Using the agents outside Copilot
+
+Both agents are stored in Copilot's `.agent.md` format. The body text is harness-neutral;
+to run them elsewhere, translate the frontmatter:
+
+- **`tools`** uses Copilot tool names (`read`, `search`, `edit`, `execute`, `todo`,
+  `web/fetch`) and MCP servers by their local config names (`GitKraken/*`, `context7/*`,
+  `playwright/*`). Map these to the target harness's names.
+- **`model`** in `local-maintenance` is a placeholder (`<exact value from autocomplete>`);
+  set it to your local model's identifier in each harness.
+- **`agents`** in `local-protocol-dev` names `worker-a` and `worker-b`, which aren't in this
+  repo yet. That agent needs them to run.
+- Both bodies assume a local model endpoint (`ENDPOINT: LOCAL`) with limited context.
+
+### Installing
+
+Copy or symlink a file into the location your harness reads (full table in
+[docs/customization-types.md](docs/customization-types.md)). For GitHub Copilot:
+
+| Kind | Personal (all projects) | Per repository |
+|---|---|---|
+| Agent | `~/.copilot/agents/` | `.github/agents/` |
+| Skill | `~/.copilot/skills/<name>/` or `~/.agents/skills/<name>/` | `.github/skills/<name>/` or `.agents/skills/<name>/` |
+| Prompt | VS Code user prompts folder | `.github/prompts/` |
+| Rule | VS Code user prompts folder (`*.instructions.md`) | `.github/copilot-instructions.md` or `.github/instructions/` |
+
+Symlinking (e.g. `ln -s ~/projects/webdev-prompts/agents/local-maintenance.agent.md ~/.copilot/agents/`)
+keeps this repo as the single source of truth.
+
+---
+
+## Tool routing directives (rule + prompt pair)
 
 This is a two-file pattern for steering an AI coding assistant's tool use. It's not specific
 to any one harness — the same split works in Continue.dev, GitHub Copilot, Cline, Kilo Code,
 or any setup that distinguishes between "always-loaded system context" and "on-demand
 invokable context."
 
-## The always-on tripwire (a "rule")
+### The always-on tripwire (a "rule")
 **Loads:** Automatically, every turn (scoped to relevant file types)
 **What it does:** A ~4-line nudge, cheap enough to sit in context permanently without adding
 real latency or noise. It doesn't contain routing logic — it just tells the model "if this
@@ -14,7 +62,7 @@ Keeping this tiny matters: bloating always-on context is the main way you slow d
 degrade a local/small model on every single message, whether or not that message even needs
 a tool.
 
-## The full routing logic (a "prompt" / on-demand context)
+### The full routing logic (a "prompt" / on-demand context)
 **Loads:** Only when explicitly invoked
 **What it does:** The actual decision tree — which tool source to use for a given request, in
 what order, with real tool names and any hard constraints (e.g. a read-only token's
@@ -27,7 +75,7 @@ per-turn cost low the rest of the time.
 
 ---
 
-## Harness configuration locations
+### Harness configuration locations
 
 File paths and terminology differ by harness. This is where each piece lives:
 
@@ -44,7 +92,7 @@ installed version's docs if the above doesn't match what you see.
 
 ---
 
-## Tools available and their focus
+### Tools available and their focus
 
 - **Playwright (`browser_*`, 20 tools)** — browser automation and runtime inspection: navigate/
   interact with a live page, capture accessibility snapshots or screenshots, read console
@@ -63,7 +111,7 @@ installed version's docs if the above doesn't match what you see.
 
 ---
 
-## Invoking the full ruleset
+### Invoking the full ruleset
 
 The exact syntax depends on your harness:
 
